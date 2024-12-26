@@ -3,54 +3,69 @@ import json
 import random
 import websockets
 import numpy as np
+from CatTrapGame import *
+from enum import Enum
 
-class Game:
-    def __init__(self, size):
-        self.size = size
-        self.hexgrid = np.zeros((size, size), dtype=int)
-        self.cat = (size // 2, size // 2)
-        self.hexgrid[self.cat] = 6  # Place the cat in the middle
-        for _ in range(3):
-            while True:
-                r, c = random.randint(0, size - 1), random.randint(0, size - 1)
-                if self.hexgrid[r, c] == 0 and not (r == size // 2 and c == size // 2):
-                    self.hexgrid[r, c] = 1  # Block the tile
-                    break
+class GameStatus(Enum):
+    GAME_ON = 0
+    PLAYER_WINS = 1
+    CAT_WINS = 2
+    CAT_TIMEOUT = 3
 
-    def move_cat(self):
-        free_tiles = np.argwhere(self.hexgrid == 0)
-        if free_tiles.size > 0:
-            r, c = free_tiles[random.randint(0, len(free_tiles) - 1)]
-            self.hexgrid[self.cat] = 0  # Clear the old position
-            self.hexgrid[r, c] = 6  # Move the cat to the new position
-            self.cat = (r, c)
-        return self.hexgrid.tolist()
-
-    def block_tile(self, r, c):
-        self.hexgrid[r, c] = 1
-
-    def unblock_tile(self, r, c):
-        self.hexgrid[r, c] = 0
-
-    def place_cat(self, r, c):
-        self.hexgrid[self.cat] = 0  # Clear previous cat position
-        self.hexgrid[r, c] = 6
-        self.cat = (r, c)
+game_status = GameStatus.GAME_ON
 
 async def handler(websocket, path):
     game = None
+    global game_status
     async for message in websocket:
         print("Received message:", message)  # Debug log
         data = json.loads(message)
         if data['command'] == 'new_game':
-            game = Game(data['size'])
+            game_status = GameStatus.GAME_ON
+            game = CatTrapGame(data['size'])
+            game.initialize_random_blocks()
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
-        elif data['command'] == 'move' and game:
-            r, c = data['clicked_tile']
-            game.block_tile(r, c)
-            updated_grid = game.move_cat()
-            await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(updated_grid)}))
-        elif data['command'] == 'edit' and game:
+        elif data['command'] == 'move':
+            if not game:
+                # Recreate the game using the provided grid
+                size = len(data['grid'])
+                game = CatTrapGame(size)
+                game.hexgrid = np.array(data['grid'], dtype=int)
+                game.cat_row, game.cat_col = tuple(np.argwhere(game.hexgrid == CAT_TILE)[0])  # Find the cat position
+            if game_status == GameStatus.GAME_ON:
+                clicked_row, clicked_col = data['clicked_tile']
+                game.block_tile(clicked_row, clicked_col)
+                allotted_time = data['deadline']
+                strategy = data['strategy']
+                random_cat = (strategy == 'random')
+                depth_limited = (strategy == 'limited')
+                minimax = (strategy == 'minimax')
+                iterative_deepening = (strategy == 'iterative')
+                max_depth = data['depth']
+                alpha_beta = data['alpha_beta_pruning']
+                game.print_hexgrid()
+                r, c = game.cat_row, game.cat_col
+                if r == 0 or r == game.size - 1 or c == 0 or c == game.size - 1:
+                    game_status = GameStatus.CAT_WINS
+                else:
+                    new_cat = game.select_cat_move(random_cat, alpha_beta, depth_limited, minimax, max_depth, iterative_deepening, allotted_time)
+                    if new_cat == [-1, -1]:
+                        game_status = GameStatus.CAT_TIMEOUT
+                    else: 
+                        if new_cat == [r, c]:
+                            game_status = GameStatus.PLAYER_WINS
+                        print(f"New cat coordinates: {new_cat}")
+                        game.move_cat(new_cat[0], new_cat[1])
+            await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
+        elif data['command'] == 'edit':
+            if not game:
+                # Recreate the game using the provided grid
+                size = len(data['grid'])
+                game = CatTrapGame(size)
+                game.hexgrid = np.array(data['grid'], dtype=int)
+                cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat position
+                if cat.size > 0: # Cat may be absent in edit mode
+                    game.cat_row, game.cat_col = tuple(cat[0])
             action = data['action']
             r, c = data['tile']
             if action == 'block':
@@ -59,16 +74,18 @@ async def handler(websocket, path):
                 game.unblock_tile(r, c)
             elif action == 'place_cat':
                 game.place_cat(r, c)
+            game_status = GameStatus.GAME_ON
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
-        if game and check_endgame(game):
-            await websocket.send(json.dumps({'command': 'endgame', 'reason': check_endgame(game)}))
+        elif data['command'] == 'requestGrid':
+            game = CatTrapGame(data['size'])
+            game.initialize_random_blocks()
+            await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
 
-def check_endgame(game):
-    # Example logic for endgame conditions
-    if not np.any(game.hexgrid == 0):  # No free tiles
-        return 1  # Cat trapped
-    # Add timeout logic here if necessary
-    return None
+        if game and (game_status != GameStatus.GAME_ON):
+            await websocket.send(json.dumps({'command': 'endgame', 'reason': game_status.value}))
+            if game_status == GameStatus.CAT_TIMEOUT:
+                game_status = GameStatus.GAME_ON
+
 
 async def main():
     async with websockets.serve(handler, "localhost", 8765):
