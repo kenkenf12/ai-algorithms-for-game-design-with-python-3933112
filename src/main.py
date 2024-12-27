@@ -30,12 +30,15 @@ class GameStatus(Enum):
 
 game_status = GameStatus.GAME_ON
 game = None
+debug_mode = False
 
 async def handler(websocket, path):
     global game
     global game_status
+    global debug_mode
     async for message in websocket:
-        print("Received message:", message)  # Debug log
+        if debug_mode:
+            print(f'Received message: {message}')  # Debug log
         data = json.loads(message)
         if data['command'] == 'new_game':
             game_status = GameStatus.GAME_ON
@@ -71,7 +74,7 @@ async def handler(websocket, path):
                     else: 
                         if new_cat == [r, c]:
                             game_status = GameStatus.PLAYER_WINS
-                        print(f"New cat coordinates: {new_cat}")
+                        print(f'New cat coordinates: {new_cat}')
                         game.move_cat(new_cat[0], new_cat[1])
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
         elif data['command'] == 'edit':
@@ -107,8 +110,8 @@ async def handler(websocket, path):
 
 
 async def main():
-    async with websockets.serve(handler, "localhost", 8765):
+    async with websockets.serve(handler, 'localhost', 8765):
         await asyncio.Future()  # Run forever
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(main())
