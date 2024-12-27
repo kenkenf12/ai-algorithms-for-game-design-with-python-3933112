@@ -1,8 +1,11 @@
 """
+Cat Trap Algorithms
+
 This is the relevant code for the LinkedIn Learning Course 
 AI Algorithms for Game Design with Python, by Eduardo Corpeño
 
-For the GUI, this code uses the Cat Trap UI VSCode Extension.
+For the GUI, this code uses the Cat Trap UI VSCode extension
+included in the extensions folder.
 """
 
 import random
@@ -12,7 +15,7 @@ import numpy as np
 
 # Constants
 CAT_TILE = 6
-BLOCK_TILE = 1
+BLOCKED_TILE = 1
 EMPTY_TILE = 0
 LAST_CALL_MS = 5
 
@@ -48,20 +51,11 @@ class CatTrapGame:
             r = random.randint(0, self.size - 1)
             c = random.randint(0, self.size - 1)
             if self.hexgrid[r, c] == EMPTY_TILE:
-                self.hexgrid[r, c] = BLOCK_TILE
+                self.hexgrid[r, c] = BLOCKED_TILE
                 count += 1    
-
-    def initialize_blocks(self, blocks, cat):
-        """Initialize the game with specific blocked hexgrid and cat position."""
-        self.cat_row, self.cat_col = cat
-        self.hexgrid[self.cat_row, self.cat_col] = CAT_TILE
-
-        for block in blocks:
-            if block != [self.cat_row, self.cat_col]:
-                self.hexgrid[block[0], block[1]] = BLOCK_TILE
-    
+   
     def block_tile(self, r, c):
-        self.hexgrid[r, c] = BLOCK_TILE
+        self.hexgrid[r, c] = BLOCKED_TILE
 
     def unblock_tile(self, r, c):
         self.hexgrid[r, c] = EMPTY_TILE
@@ -231,7 +225,7 @@ class CatTrapGame:
             raise InvalidMove('Invalid Move!')
 
         if maximizing_player:
-            self.hexgrid[move[0], move[1]] = BLOCK_TILE
+            self.hexgrid[move[0], move[1]] = BLOCKED_TILE
         else:
             self.hexgrid[move[0], move[1]] = CAT_TILE  # Place the cat
             self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Remove the old cat
@@ -264,6 +258,7 @@ class CatTrapGame:
 
             if self.terminated:
                 return [-1, -1], 0
+            
             if value > best_value:
                 best_value = value
                 best_move = target_pos
@@ -362,6 +357,7 @@ class CatTrapGame:
 
             if self.terminated:
                 return [-1, -1], 0
+            
             if value > best_value:
                 best_value = value
                 best_move = target_pos
@@ -411,6 +407,7 @@ class CatTrapGame:
 
                 if self.terminated:
                     return 0
+                
                 if best_value <= alpha:
                     return best_value
                 beta = min(beta, best_value)

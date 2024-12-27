@@ -1,9 +1,25 @@
+"""
+main.py: Entry Point for the Cat Trap Game Server
+
+This script initializes and runs the Cat Trap game server, handling client connections 
+and managing game state updates through WebSocket communication. 
+The client is the Cat Trap GUI VSCode extension.
+
+Usage:
+    Run this file to start the game server.
+    Start the Cat Trap GUI Extension: (Ctrl+Shift+P, then "Start Cat Trap Game")
+
+Dependencies:
+    - cat_trap_algorithms: Contains the game logic and algorithms for the Cat Trap game.
+    - websockets: Used for WebSocket server communication.
+    - asyncio: Enables asynchronous operations.
+"""
+
 import asyncio
 import json
-import random
 import websockets
 import numpy as np
-from CatTrapGame import *
+from cat_trap_algorithms import *
 from enum import Enum
 
 class GameStatus(Enum):
@@ -13,9 +29,10 @@ class GameStatus(Enum):
     CAT_TIMEOUT = 3
 
 game_status = GameStatus.GAME_ON
+game = None
 
 async def handler(websocket, path):
-    game = None
+    global game
     global game_status
     async for message in websocket:
         print("Received message:", message)  # Debug log
@@ -76,9 +93,11 @@ async def handler(websocket, path):
                 game.place_cat(r, c)
             game_status = GameStatus.GAME_ON
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
-        elif data['command'] == 'requestGrid':
-            game = CatTrapGame(data['size'])
-            game.initialize_random_blocks()
+        elif data['command'] == 'request_grid':
+            if not game:
+                game_status = GameStatus.GAME_ON
+                game = CatTrapGame(7)
+                game.initialize_random_blocks()
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
 
         if game and (game_status != GameStatus.GAME_ON):
