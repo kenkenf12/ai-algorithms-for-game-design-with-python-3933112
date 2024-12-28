@@ -17,7 +17,7 @@ import numpy as np
 CAT_TILE = 6
 BLOCKED_TILE = 1
 EMPTY_TILE = 0
-LAST_CALL_MS = 5
+LAST_CALL_MS = 1
 
 class InvalidMove(ValueError):
     pass
@@ -173,7 +173,7 @@ class CatTrapGame:
             target = [r + 1, c - 1] if r % 2 == 0 else [r + 1, c]
         return target
 
-    def utility(self, moves, maximizing_player=True):
+    def utility(self, num_moves, maximizing_player=True):
         """
         Calculate the utility of the current game state.
         """
@@ -183,8 +183,9 @@ class CatTrapGame:
             self.cat_col == 0 or self.cat_col == self.size - 1
         ):
             return float(100)
-
-        if len(moves) == 0:
+        
+        # Only the cat can run out of moves
+        if num_moves == 0: 
             return float(-100)
 
         # Use the evaluation function
@@ -232,7 +233,7 @@ class CatTrapGame:
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True  
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(legal_moves, maximizing_player)
+            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), maximizing_player)
         
         best_value = float('-inf')
         best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
@@ -272,22 +273,19 @@ class CatTrapGame:
         ):
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return (game.size**2 - depth) * game.utility([2, 3, 4], maximizing_player)
+            
+            return (game.size**2 - depth) * game.utility(1, maximizing_player)
         
         best_value = float('inf')
 
-        # Iterate through all possible moves (workaround for block placement)
-        for r in range(game.size):
-            for c in range(game.size):
-                if game.hexgrid[r, c] != EMPTY_TILE:
-                    continue
-                
-                move = [r, c]
-                _, value = self.max_value(game, move, maximizing_player, depth + 1)
-                best_value = min(best_value, value)
+        # Iterate through all legal moves for the player (empty tiles)
+        legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
+        for move in legal_moves:
+            _, value = self.max_value(game, move, maximizing_player, depth + 1)
+            best_value = min(best_value, value)
 
-                if self.terminated:
-                    return 0
+            if self.terminated:
+                return 0
         
         return best_value
 
@@ -331,7 +329,7 @@ class CatTrapGame:
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(legal_moves, maximizing_player)
+            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), maximizing_player)
 
         best_value = float('-inf')
         best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
@@ -375,26 +373,22 @@ class CatTrapGame:
         ):
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return (game.size**2 - depth) * game.utility([2, 3, 4], maximizing_player)
+            return (game.size**2 - depth) * game.utility(1, maximizing_player)
 
         best_value = float('inf')
 
-        # Iterate through all possible moves for player (empty tiles)
-        for r in range(game.size):
-            for c in range(game.size):
-                if game.hexgrid[r, c] != EMPTY_TILE:
-                    continue
+        # Iterate through all legal moves for the player (empty tiles)
+        legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
+        for move in legal_moves:
+            _, value = self.alpha_beta_max_value(game, move, alpha, beta, maximizing_player, depth + 1)
+            best_value = min(best_value, value)
 
-                move = [r, c]
-                _, value = self.alpha_beta_max_value(game, move, alpha, beta, maximizing_player, depth + 1)
-                best_value = min(best_value, value)
-
-                if self.terminated:
-                    return 0
-                
-                if best_value <= alpha:
-                    return best_value
-                beta = min(beta, best_value)
+            if self.terminated:
+                return 0
+            
+            if best_value <= alpha:
+                return best_value
+            beta = min(beta, best_value)
 
         return best_value
 

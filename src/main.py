@@ -98,9 +98,14 @@ async def handler(websocket, path):
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
         elif data['command'] == 'request_grid':
             if not game:
+                # Recreate the game using the provided grid
+                size = len(data['grid'])
+                game = CatTrapGame(size)
+                game.hexgrid = np.array(data['grid'], dtype=int)
+                cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat position
+                if cat.size > 0: # Cat may be absent in edit mode
+                    game.cat_row, game.cat_col = tuple(cat[0])
                 game_status = GameStatus.GAME_ON
-                game = CatTrapGame(7)
-                game.initialize_random_blocks()
             await websocket.send(json.dumps({'command': 'updateGrid', 'data': json.dumps(game.hexgrid.tolist())}))
 
         if game and (game_status != GameStatus.GAME_ON):
