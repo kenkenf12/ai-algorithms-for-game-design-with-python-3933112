@@ -344,8 +344,8 @@ class CatTrapGame:
         """
         # Create a mapping for tile values to characters
         tile_map = {
-            EMPTY_TILE: ' ⬡',
-            BLOCKED_TILE: ' ⬢',
+            EMPTY_TILE: '⬡',
+            BLOCKED_TILE: '⬢',
             CAT_TILE: '🐈'
         }
 
