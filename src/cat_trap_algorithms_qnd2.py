@@ -1,8 +1,4 @@
 """
-04_03 - Challenge: An iteratively deepening cat 
-        
-        Go to line 498 for the challenge!
-
 Cat Trap Algorithms
 
 This is the relevant code for the LinkedIn Learning Course 
@@ -39,6 +35,7 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
+        self.eval_function = CatEvaluationFunction()
         self.reached_max_depth = False 
         self.max_depth = float('inf')
 
@@ -133,6 +130,33 @@ class CatTrapGame:
             target = [r + 1, c - 1] if r % 2 == 0 else [r + 1, c]
         return target
 
+    def utility(self, num_moves, cat_turn):
+        """
+        Calculate the utility of the current game state.
+        """
+        # Terminal cases
+        if (
+            self.cat_row == 0 or self.cat_row == self.size - 1 or
+            self.cat_col == 0 or self.cat_col == self.size - 1
+        ):
+            return float(100)
+        
+        # Only the cat can run out of moves
+        if num_moves == 0: 
+            return float(-100)
+
+        # Use the evaluation function
+        # Evaluation function options: 'moves', 'custom', 'proximity'
+        evaluation_function = 'proximity'
+
+        if evaluation_function == 'moves':
+            return self.eval_function.score_moves(self, cat_turn)
+        elif evaluation_function == 'proximity':
+            return self.eval_function.score_proximity(self, cat_turn)
+        elif evaluation_function == 'custom':
+            return self.eval_function.score_custom(self, cat_turn)
+        return 0
+
     def apply_move(self, move, cat_turn):
         """
         Apply a move to the game state.
@@ -192,93 +216,6 @@ class CatTrapGame:
             print(prefix + row_display)
 
         return
-
-    def utility(self, num_moves, cat_turn):
-        """
-        Calculate the utility of the current game state.
-        """
-        # Terminal cases
-        if (
-            self.cat_row == 0 or self.cat_row == self.size - 1 or
-            self.cat_col == 0 or self.cat_col == self.size - 1
-        ):
-            return float(100)
-        
-        # Only the cat can run out of moves
-        if num_moves == 0: 
-            return float(-100)
-
-        # Use the evaluation function
-        # Evaluation function options: 'moves', 'custom', 'proximity'
-        evaluation_function = 'custom'
-
-        if evaluation_function == 'moves':
-            return self.score_moves(cat_turn)
-        elif evaluation_function == 'proximity':
-            return self.score_proximity(cat_turn)
-        elif evaluation_function == 'custom':
-            return self.score_custom(cat_turn)
-        return 0
-
-    def score_moves(self, cat_turn):
-        """
-        Evaluate based on the number of valid moves available for the cat.
-        """
-        cat_moves = self.get_valid_moves()
-        return len(cat_moves) if cat_turn else len(cat_moves) - 1
-
-    def score_proximity(self, cat_turn):
-        """
-        Evaluate based on the proximity of the cat to the board edges.
-        """
-        distances = [100, 100]  # High initial distances as default
-        cat_moves = self.get_valid_moves()
-        for move in cat_moves:
-            distance = 0
-            r, c = self.cat_row, self.cat_col
-            while True:
-                distance += 1
-                r, c = self.get_target_position(r, c, move)
-                if r < 0 or r >= self.size or c < 0 or c >= self.size:
-                    break
-                if self.hexgrid[r, c] != EMPTY_TILE:
-                    distance *= 5 # Increase cost for blocked paths
-                    break
-            distances.append(distance)
-
-        distances.sort()
-        return self.size - (distances[0] if cat_turn else distances[1])
-
-    def score_custom(self, cat_turn):
-        """
-        Custom evaluation function combining proximity, moves, and progress penalties.
-
-        Args:
-            cat_turn (bool): True if it's the cat's turn, otherwise False.
-        
-        Returns:
-            float: The computed score for the cat.
-        """
-        # Move Score
-        move_score = self.score_moves(cat_turn) / 6.0  # Normalize for max 6 moves
-
-        # Proximity Score
-        proximity_score = self.score_proximity(cat_turn) / self.size # Normalize
-
-        # Calculate Penalty
-        center_row, center_col = self.size // 2, self.size // 2
-        distance = ((self.cat_row - center_row)**2 + (self.cat_col - center_col)**2)**0.5
-
-        max_penalty = (self.size * 0.75)
-        penalty = max_penalty - distance
-        penalty = penalty / max_penalty # Normalize
-        if not cat_turn:
-            penalty += 0.2 
-
-        # Combine Scores
-        score = proximity_score + move_score - penalty * 0.5
-
-        return score
 
     # ===================== Intelligent Agents =====================
     """
@@ -498,78 +435,74 @@ class CatTrapGame:
     def iterative_deepening(self, use_alpha_beta):
         """
         Perform iterative deepening search with an option to use Alpha-Beta pruning.
-
-        04_03 - Challenge: An iteratively deepening cat 
-
-        Your task is to implement the iterative deepening algorithm for the
-        intelligent cat.
-        Iterative deepening incrementally explores deeper levels of the game tree, to provide the best move possible in the allotted time.
-
-        Make sure to take care of the following considerations:
-        1) Remove the placeholder code immediately below these instructions.
-        2) Read through the skeleton code provided below.
-        3) Fill in the blanks following the instructions in the "TODO:" comments.
-        4) If you're stuck, you may ask in the course's Q&A or consult the 
-           solution in the next folder to unblock yourself without spoiling too
-           much of the fun.
         """
-        # TODO: Remove the following 2 lines to enable your iterative deepening implementation.
-        self.placeholder_warning()
-        return self.random_cat_move(), 0
-
-        # Skeleton Code - Iterative Deepening
         best_depth = 0
         output_move, utility = [self.cat_row, self.cat_col], 0
-
-        for depth in range(1, self.size**2):  # Maximum depth to explore
+        for depth in range(1, self.size**2):
             self.reached_max_depth = False
+            self.max_depth = depth
+            if use_alpha_beta:
+                best_move, utility = self.alpha_beta()
+            else:
+                best_move, utility = self.minimax()
             
-            # TODO: Use the chosen algorithm (Alpha-Beta or Minimax) to compute the best move
-            #       with a limited depth.
-            # HINT: If `use_alpha_beta` is True, call `self.alpha_beta()`. Otherwise, call `self.minimax()`.
-            # Replace the placeholder values below:
-            best_move, utility = None, None  # TODO: Replace with the correct function call.
-
-            # Stop exploring deeper levels if the search is terminated (timeout).
             if self.terminated:
                 break
             else:
-                # Great job! You're almost there. 
-                # Just tie it all together by updating `output_move` and `best_depth`.
-
-                # TODO: Update `output_move` and `best_depth` based on the result of the current depth.
-                # HINT: Ensure `output_move` stores the best move found so far.
-                # HINT: Update `best_depth` to track the deepest level explored successfully.
-                pass  # TODO: Replace this with code to update `output_move` and `best_depth`.
-
+                output_move = best_move
+                best_depth = depth
                 elapsed_time = (time.time() - self.start_time) * 1000
                 if VERBOSE:
-                    # TODO: Print diagnostic information about the current depth and elapsed time.
-                    # HINT: Use the `depth` and `elapsed_time` variables.
-                    pass  # TODO: Replace this with a print statement to show progress.
-
-                # Stop exploring deeper levels if the maximum depth was never reached.
+                    print(f'Done with a tree of depth {depth} in {elapsed_time:.3f}ms')
                 # Near the end, trees will be shallower than depth.
                 # Thus, a shallow tree that finishes yields the best move.
                 if not self.reached_max_depth:
                     break
 
         if VERBOSE:
-            # TODO: Print the final depth reached.
-            pass  # TODO: Replace this with a print statement for `best_depth`.
-
+            print('Depth reached:', best_depth)
         return output_move, utility
 
-    def placeholder_warning(self):
-        signs = '⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️'
-        print(f'{signs} {signs}')
-        print('                WARNING')
-        print('This is a temporary implementation using')
-        print("the random algorithm. You're supposed to")
-        print('write code to solve a challenge.')
-        print('Did you run the wrong version of main.py?')
-        print('Double-check its path.')
-        print(f'{signs} {signs}')
+class CatEvaluationFunction:
+    """
+    Evaluation function class containing different scoring methods.
+    """
+
+    def score_moves(self, game, cat_turn):
+        """
+        Evaluate based on the number of valid moves available for the cat.
+        """
+        cat_moves = game.get_valid_moves()
+        return len(cat_moves) if cat_turn else len(cat_moves) - 1
+
+    def score_proximity(self, game, cat_turn):
+        """
+        Evaluate based on the proximity of the cat to the board edges.
+        """
+        distances = [100, 100]  # High initial distances as default
+        cat_moves = game.get_valid_moves()
+        for move in cat_moves:
+            distance = 0
+            r, c = game.cat_row, game.cat_col
+            while True:
+                distance += 1
+                r, c = game.get_target_position(r, c, move)
+                if r < 0 or r >= game.size or c < 0 or c >= game.size:
+                    break
+                if game.hexgrid[r, c] != EMPTY_TILE:
+                    distance *= 5 # Increase cost for blocked paths
+                    break
+            distances.append(distance)
+
+        distances.sort()
+        return game.size * 2 - (distances[0] if cat_turn else distances[1])
+
+    def score_custom(self, game, cat_turn):
+        """
+        Placeholder for a custom evaluation function.
+        """
+        # Write your custom logic here
+        return 1 if cat_turn else -1
 
 if __name__ == '__main__':
     signs = '⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️'

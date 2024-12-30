@@ -17,8 +17,11 @@ import numpy as np
 CAT_TILE = 6
 BLOCKED_TILE = 1
 EMPTY_TILE = 0
-LAST_CALL_MS = 0.5
+LAST_CALL_MS = 1
 VERBOSE = True
+
+class InvalidMove(ValueError):
+    pass
 
 class CatTrapGame:
     """
@@ -35,6 +38,7 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
+        self.eval_function = CatEvaluationFunction()
         self.reached_max_depth = False 
         self.max_depth = float('inf')
 
@@ -76,205 +80,6 @@ class CatTrapGame:
     def move_cat(self, r, c):
         self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Clear previous cat position
         self.place_cat(r, c)
-    
-    def get_valid_moves(self):
-        """
-        Get a list of valid moves for the cat.
-        """
-        hexgrid, r, c = self.hexgrid, self.cat_row, self.cat_col
-        size = self.size
-        moves = []
-        # Check possible directions for the next move: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
-        if c < size - 1 and hexgrid[r][c + 1] == EMPTY_TILE:
-            moves.append('E')
-        if c > 0 and hexgrid[r][c - 1] == EMPTY_TILE:
-            moves.append('W')
-
-        if r % 2 == 0:
-            if r > 0 and c < size and hexgrid[r - 1][c] == EMPTY_TILE:
-                moves.append('NE')
-            if r > 0 and c > 0 and hexgrid[r - 1][c - 1] == EMPTY_TILE:
-                moves.append('NW')
-            if r < size - 1 and c < size and hexgrid[r + 1][c] == EMPTY_TILE:
-                moves.append('SE')
-            if r < size - 1 and c > 0 and hexgrid[r + 1][c - 1] == EMPTY_TILE:
-                moves.append('SW')
-        else:
-            if r > 0 and c < size - 1 and hexgrid[r - 1][c + 1] == EMPTY_TILE:
-                moves.append('NE')
-            if r > 0 and c >= 0 and hexgrid[r - 1][c] == EMPTY_TILE:
-                moves.append('NW')
-            if r < size - 1 and c < size - 1 and hexgrid[r + 1][c + 1] == EMPTY_TILE:
-                moves.append('SE')
-            if r < size - 1 and c > 0 and hexgrid[r + 1][c] == EMPTY_TILE:
-                moves.append('SW')
-        return moves
-
-    def get_target_position(self, r, c, direction):
-        """
-        Get the target position based on the current position and direction.
-        """
-        target = [r, c]
-        if direction == 'E':
-            target = [r, c + 1]
-        elif direction == 'W':
-            target = [r, c - 1]
-        elif direction == 'NE':
-            target = [r - 1, c] if r % 2 == 0 else [r - 1, c + 1]
-        elif direction == 'NW':
-            target = [r - 1, c - 1] if r % 2 == 0 else [r - 1, c]
-        elif direction == 'SE':
-            target = [r + 1, c] if r % 2 == 0 else [r + 1, c + 1]
-        elif direction == 'SW':
-            target = [r + 1, c - 1] if r % 2 == 0 else [r + 1, c]
-        return target
-
-    def apply_move(self, move, cat_turn):
-        """
-        Apply a move to the game state.
-        """
-        action_str = "move cat to" if cat_turn else "block"
-        if self.hexgrid[move[0], move[1]] != EMPTY_TILE:
-            self.pretty_print_hexgrid()
-            print('\n=====================================')
-            print(f'Attempting to {action_str} {move} = {self.hexgrid[move[0], move[1]]}')
-            print('Invalid Move! Check your code.')
-            print('=====================================\n')
-
-        if cat_turn:
-            self.hexgrid[move[0], move[1]] = CAT_TILE  # Place the cat
-            self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Remove the old cat
-            self.cat_row, self.cat_col = move
-        else:
-            self.hexgrid[move[0], move[1]] = BLOCKED_TILE
-
-    def time_left(self):
-        """
-        Calculate the time remaining before the deadline.
-        """
-        return (self.deadline - time.time()) * 1000
-
-    def print_hexgrid(self):
-        """
-        Print the current state of the game board.
-        """
-        for r in range(0, self.size, 2):
-            print(self.hexgrid[r])
-            if r + 1 < self.size:
-                print('', self.hexgrid[r + 1])
-        print()
-        return
-    
-    def pretty_print_hexgrid(self):
-        """
-        Print the current state of the game board using custom characters.
-        """
-        # Create a mapping for tile values to characters.
-        # These are emojis, so they may not render properly in some settings.
-        # Note that these are strings with a space preceding the tiles, but
-        # not the cat. For regular ASCII characters, change to single characters 
-        # like the alternatives shown in the comments.
-        tile_map = {
-            EMPTY_TILE: ' ⬡',   # Alternative: '-'
-            BLOCKED_TILE: ' ⬢', # Alternative: 'X'
-            CAT_TILE: '🐈'      # Alternative: 'C'
-        }
-
-        for r in range(self.size):
-            # Add a leading space for odd rows for staggered effect
-            prefix = ' ' if r % 2 != 0 else ''
-            # Convert each row using the tile map
-            row_display = ' '.join(tile_map[cell] for cell in self.hexgrid[r])
-            print(prefix + row_display)
-
-        return
-
-    def utility(self, num_moves, cat_turn):
-        """
-        Calculate the utility of the current game state.
-        """
-        # Terminal cases
-        if (
-            self.cat_row == 0 or self.cat_row == self.size - 1 or
-            self.cat_col == 0 or self.cat_col == self.size - 1
-        ):
-            return float(100)
-        
-        # Only the cat can run out of moves
-        if num_moves == 0: 
-            return float(-100)
-
-        # Use the evaluation function
-        # Evaluation function options: 'moves', 'custom', 'proximity'
-        evaluation_function = 'custom'
-
-        if evaluation_function == 'moves':
-            return self.score_moves(cat_turn)
-        elif evaluation_function == 'proximity':
-            return self.score_proximity(cat_turn)
-        elif evaluation_function == 'custom':
-            return self.score_custom(cat_turn)
-        return 0
-
-    def score_moves(self, cat_turn):
-        """
-        Evaluate based on the number of valid moves available for the cat.
-        """
-        cat_moves = self.get_valid_moves()
-        return len(cat_moves) if cat_turn else len(cat_moves) - 1
-
-    def score_proximity(self, cat_turn):
-        """
-        Evaluate based on the proximity of the cat to the board edges.
-        """
-        distances = [100, 100]  # High initial distances as default
-        cat_moves = self.get_valid_moves()
-        for move in cat_moves:
-            distance = 0
-            r, c = self.cat_row, self.cat_col
-            while True:
-                distance += 1
-                r, c = self.get_target_position(r, c, move)
-                if r < 0 or r >= self.size or c < 0 or c >= self.size:
-                    break
-                if self.hexgrid[r, c] != EMPTY_TILE:
-                    distance *= 5 # Increase cost for blocked paths
-                    break
-            distances.append(distance)
-
-        distances.sort()
-        return self.size - (distances[0] if cat_turn else distances[1])
-
-    def score_custom(self, cat_turn):
-        """
-        Custom evaluation function combining proximity, moves, and progress penalties.
-
-        Args:
-            cat_turn (bool): True if it's the cat's turn, otherwise False.
-        
-        Returns:
-            float: The computed score for the cat.
-        """
-        # Move Score
-        move_score = self.score_moves(cat_turn) / 6.0  # Normalize for max 6 moves
-
-        # Proximity Score
-        proximity_score = self.score_proximity(cat_turn) / self.size # Normalize
-
-        # Calculate Penalty
-        center_row, center_col = self.size // 2, self.size // 2
-        distance = ((self.cat_row - center_row)**2 + (self.cat_col - center_col)**2)**0.5
-
-        max_penalty = (self.size * 0.75)
-        penalty = max_penalty - distance
-        penalty = penalty / max_penalty # Normalize
-        if not cat_turn:
-            penalty += 0.2 
-
-        # Combine Scores
-        score = proximity_score + move_score - penalty * 0.5
-
-        return score
 
     # ===================== Intelligent Agents =====================
     """
@@ -335,39 +140,179 @@ class CatTrapGame:
             direction = random.choice(moves)
             return self.get_target_position(self.cat_row, self.cat_col, direction)
         return [self.cat_row, self.cat_col]
+    
+    def get_valid_moves(self):
+        """
+        Get a list of valid moves for the cat.
+        """
+        hexgrid, r, c = self.hexgrid, self.cat_row, self.cat_col
+        size = self.size
+        moves = []
+        # Check possible directions for the next move: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
+        if c < size - 1 and hexgrid[r][c + 1] == EMPTY_TILE:
+            moves.append('E')
+        if c > 0 and hexgrid[r][c - 1] == EMPTY_TILE:
+            moves.append('W')
 
-    def max_value(self, game, depth):
+        if r % 2 == 0:
+            if r > 0 and c < size and hexgrid[r - 1][c] == EMPTY_TILE:
+                moves.append('NE')
+            if r > 0 and c > 0 and hexgrid[r - 1][c - 1] == EMPTY_TILE:
+                moves.append('NW')
+            if r < size - 1 and c < size and hexgrid[r + 1][c] == EMPTY_TILE:
+                moves.append('SE')
+            if r < size - 1 and c > 0 and hexgrid[r + 1][c - 1] == EMPTY_TILE:
+                moves.append('SW')
+        else:
+            if r > 0 and c < size - 1 and hexgrid[r - 1][c + 1] == EMPTY_TILE:
+                moves.append('NE')
+            if r > 0 and c >= 0 and hexgrid[r - 1][c] == EMPTY_TILE:
+                moves.append('NW')
+            if r < size - 1 and c < size - 1 and hexgrid[r + 1][c + 1] == EMPTY_TILE:
+                moves.append('SE')
+            if r < size - 1 and c > 0 and hexgrid[r + 1][c] == EMPTY_TILE:
+                moves.append('SW')
+        return moves
+
+    def get_target_position(self, r, c, direction):
+        """
+        Get the target position based on the current position and direction.
+        """
+        target = [r, c]
+        if direction == 'E':
+            target = [r, c + 1]
+        elif direction == 'W':
+            target = [r, c - 1]
+        elif direction == 'NE':
+            target = [r - 1, c] if r % 2 == 0 else [r - 1, c + 1]
+        elif direction == 'NW':
+            target = [r - 1, c - 1] if r % 2 == 0 else [r - 1, c]
+        elif direction == 'SE':
+            target = [r + 1, c] if r % 2 == 0 else [r + 1, c + 1]
+        elif direction == 'SW':
+            target = [r + 1, c - 1] if r % 2 == 0 else [r + 1, c]
+        return target
+
+    def utility(self, num_moves, maximizing_player=True):
+        """
+        Calculate the utility of the current game state.
+        """
+        # Terminal cases
+        if (
+            self.cat_row == 0 or self.cat_row == self.size - 1 or
+            self.cat_col == 0 or self.cat_col == self.size - 1
+        ):
+            return float(100)
+        
+        # Only the cat can run out of moves
+        if num_moves == 0: 
+            return float(-100)
+
+        # Use the evaluation function
+        # Evaluation function options: 'moves', 'custom', 'proximity'
+        evaluation_function = 'proximity'
+
+        if evaluation_function == 'moves':
+            return self.eval_function.score_moves(self, maximizing_player)
+        elif evaluation_function == 'proximity':
+            return self.eval_function.score_proximity(self, maximizing_player)
+        elif evaluation_function == 'custom':
+            return self.eval_function.score_custom(self, maximizing_player)
+        return 0
+
+    def apply_move(self, move, maximizing_player):
+        """
+        Apply a move to the game state.
+        """
+        if self.hexgrid[move[0], move[1]] != EMPTY_TILE:
+            print(f'Attempting to move to {move} = {self.hexgrid[move[0], move[1]]}')
+            self.pretty_print_hexgrid()
+            raise InvalidMove('Invalid Move!')
+
+        if maximizing_player:
+            self.hexgrid[move[0], move[1]] = BLOCKED_TILE
+        else:
+            self.hexgrid[move[0], move[1]] = CAT_TILE  # Place the cat
+            self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Remove the old cat
+            self.cat_row, self.cat_col = move
+
+    def time_left(self):
+        """
+        Calculate the time remaining before the deadline.
+        """
+        return (self.deadline - time.time()) * 1000
+
+    def print_hexgrid(self):
+        """
+        Print the current state of the game board.
+        """
+        for r in range(0, self.size, 2):
+            print(self.hexgrid[r])
+            if r + 1 < self.size:
+                print('', self.hexgrid[r + 1])
+        print()
+        return
+    
+    def pretty_print_hexgrid(self):
+        """
+        Print the current state of the game board using custom characters.
+
+        Args:
+            empty_tile_char (str): Character to represent an empty tile.
+            block_tile_char (str): Character to represent a blocked tile.
+            cat_tile_char (str): Character to represent the cat.
+        """
+        # Create a mapping for tile values to characters
+        tile_map = {
+            EMPTY_TILE: ' ⬡',
+            BLOCKED_TILE: ' ⬢',
+            CAT_TILE: '🐈'
+        }
+
+        for r in range(self.size):
+            # Add a leading space for odd rows for staggered effect
+            prefix = ' ' if r % 2 != 0 else ''
+            # Convert each row using the tile map
+            row_display = ' '.join(tile_map[cell] for cell in self.hexgrid[r])
+            print(prefix + row_display)
+
+        return
+
+    def max_value(self, upper_game, move, maximizing_player, depth):
         """
         Calculate the maximum value for the current game state in the minimax algorithm.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
             return [-1, -1], 0
+
+        game = copy.deepcopy(upper_game)
+        if move != [-1, -1]:
+            maximizing_player = not maximizing_player
+            game.apply_move(move, maximizing_player)
         
         legal_moves = game.get_valid_moves()  # Available directions: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True  
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), maximizing_player)
         
         best_value = float('-inf')
         best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
         for direction in legal_moves:
-            move = game.get_target_position(game.cat_row, game.cat_col, direction)
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = True)
-            value = self.min_value(next_game, depth + 1)
+            target_pos = game.get_target_position(game.cat_row, game.cat_col, direction)
+            value = self.min_value(game, target_pos, maximizing_player, depth + 1)
 
             if self.terminated:
                 return [-1, -1], 0
             
             if value > best_value:
                 best_value = value
-                best_move = move
+                best_move = target_pos
   
         return best_move, best_value
 
-    def min_value(self, game, depth):
+    def min_value(self, upper_game, move, maximizing_player, depth):
         """
         Calculate the minimum value for the current game state in the minimax algorithm.
 
@@ -379,6 +324,10 @@ class CatTrapGame:
             self.terminated = True
             return 0
 
+        game = copy.deepcopy(upper_game)
+        maximizing_player = not maximizing_player
+        game.apply_move(move, maximizing_player)
+
         # Check if terminal state or depth limit is reached
         if depth == self.max_depth or (
             game.cat_row == 0 or game.cat_row == self.size - 1 or
@@ -387,16 +336,14 @@ class CatTrapGame:
             if depth == self.max_depth:
                 self.reached_max_depth = True
             
-            return (game.size**2 - depth) * game.utility(1, cat_turn = False)
+            return (game.size**2 - depth) * game.utility(1, maximizing_player)
         
         best_value = float('inf')
 
         # Iterate through all legal moves for the player (empty tiles)
         legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
         for move in legal_moves:
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = False)
-            _, value = self.max_value(next_game, depth + 1)
+            _, value = self.max_value(game, move, maximizing_player, depth + 1)
             best_value = min(best_value, value)
 
             if self.terminated:
@@ -404,13 +351,14 @@ class CatTrapGame:
         
         return best_value
 
-    def minimax(self):
+    def minimax(self, maximizing_player=True):
         """
         Perform the Minimax algorithm to determine the best move.
         """
-        return self.max_value(self, depth = 0)
+        best_move, best_value = self.max_value(self, [-1, -1], maximizing_player, depth=0)
+        return best_move, best_value
 
-    def alpha_beta_max_value(self, game, alpha, beta, depth):
+    def alpha_beta_max_value(self, upper_game, move, alpha, beta, maximizing_player, depth):
         """
         Calculate the maximum value for the current game state using Alpha-Beta pruning.
         """
@@ -418,34 +366,37 @@ class CatTrapGame:
             self.terminated = True
             return [-1, -1], 0
 
+        game = copy.deepcopy(upper_game)
+        if move != [-1, -1]:
+            maximizing_player = not maximizing_player
+            game.apply_move(move, maximizing_player)
+
         legal_moves = game.get_valid_moves()  # Available directions: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), maximizing_player)
 
         best_value = float('-inf')
         best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
         for direction in legal_moves:
-            move = game.get_target_position(game.cat_row, game.cat_col, direction)
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = True)
-            value = self.alpha_beta_min_value(next_game, alpha, beta, depth + 1)
+            target_pos = game.get_target_position(game.cat_row, game.cat_col, direction)
+            value = self.alpha_beta_min_value(game, target_pos, alpha, beta, maximizing_player, depth + 1)
 
             if self.terminated:
                 return [-1, -1], 0
             
             if value > best_value:
                 best_value = value
-                best_move = move
+                best_move = target_pos
 
-            if best_value >= beta: # Pruning
+            if best_value >= beta:
                 return best_move, best_value
             alpha = max(alpha, best_value)
 
         return best_move, best_value
 
-    def alpha_beta_min_value(self, game, alpha, beta, depth):
+    def alpha_beta_min_value(self, upper_game, move, alpha, beta, maximizing_player, depth):
         """
         Calculate the minimum value for the current game state using Alpha-Beta pruning.
 
@@ -457,6 +408,10 @@ class CatTrapGame:
             self.terminated = True
             return 0
 
+        game = copy.deepcopy(upper_game)
+        maximizing_player = not maximizing_player
+        game.apply_move(move, maximizing_player)
+
         # Check if terminal state or depth limit is reached
         if depth == self.max_depth or (
             game.cat_row == 0 or game.cat_row == self.size - 1 or
@@ -464,32 +419,31 @@ class CatTrapGame:
         ):
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return (game.size**2 - depth) * game.utility(1, cat_turn = False)
+            return (game.size**2 - depth) * game.utility(1, maximizing_player)
 
         best_value = float('inf')
 
         # Iterate through all legal moves for the player (empty tiles)
         legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
         for move in legal_moves:
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = False)
-            _, value = self.alpha_beta_max_value(next_game, alpha, beta, depth + 1)
+            _, value = self.alpha_beta_max_value(game, move, alpha, beta, maximizing_player, depth + 1)
             best_value = min(best_value, value)
 
             if self.terminated:
                 return 0
             
-            if best_value <= alpha: # Pruning
+            if best_value <= alpha:
                 return best_value
             beta = min(beta, best_value)
 
         return best_value
 
-    def alpha_beta(self, alpha = float('-inf'), beta = float('inf')):
+    def alpha_beta(self, alpha=float('-inf'), beta=float('inf'), maximizing_player=True):
         """
         Perform the Alpha-Beta pruning algorithm to determine the best move.
         """
-        return self.alpha_beta_max_value(self, alpha, beta, depth = 0)
+        best_move, best_value = self.alpha_beta_max_value(self, [-1, -1], alpha, beta, maximizing_player, depth=0)
+        return best_move, best_value
 
     def iterative_deepening(self, use_alpha_beta):
         """
@@ -521,6 +475,47 @@ class CatTrapGame:
         if VERBOSE:
             print('Depth reached:', best_depth)
         return output_move, utility
+
+class CatEvaluationFunction:
+    """
+    Evaluation function class containing different scoring methods.
+    """
+
+    def score_moves(self, game, maximizing_player_turn=True):
+        """
+        Evaluate based on the number of valid moves available for the cat.
+        """
+        cat_moves = game.get_valid_moves()
+        return len(cat_moves) if maximizing_player_turn else len(cat_moves) - 1
+
+    def score_proximity(self, game, maximizing_player_turn=True):
+        """
+        Evaluate based on the proximity of the cat to the board edges.
+        """
+        distances = [100, 100]  # High initial distances
+        cat_moves = game.get_valid_moves()
+        for move in cat_moves:
+            distance = 0
+            r, c = game.cat_row, game.cat_col
+            while True:
+                distance += 1
+                r, c = game.get_target_position(r, c, move)
+                if r < 0 or r >= game.size or c < 0 or c >= game.size:
+                    break
+                if game.hexgrid[r, c] != EMPTY_TILE:
+                    distance *= 5
+                    break
+            distances.append(distance)
+
+        distances.sort()
+        return game.size * 2 - (distances[0] if maximizing_player_turn else distances[1])
+
+    def score_custom(self, game, maximizing_player_turn=True):
+        """
+        Placeholder for a custom evaluation function.
+        """
+        # Write your custom logic here
+        return 1 if maximizing_player_turn else -1
 
 if __name__ == '__main__':
     signs = '⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️'

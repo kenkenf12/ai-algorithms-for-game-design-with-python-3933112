@@ -1,7 +1,7 @@
 """
-04_03 - Challenge: An iteratively deepening cat 
+03_06 - Challenge: Write your own evaluation function 
         
-        Go to line 498 for the challenge!
+        Go to line 252 for the challenge!
 
 Cat Trap Algorithms
 
@@ -251,32 +251,50 @@ class CatTrapGame:
 
     def score_custom(self, cat_turn):
         """
-        Custom evaluation function combining proximity, moves, and progress penalties.
+        Placeholder for a custom evaluation function.
 
-        Args:
-            cat_turn (bool): True if it's the cat's turn, otherwise False.
-        
-        Returns:
-            float: The computed score for the cat.
+        03_06 - Challenge: Write your own evaluation function 
+
+        Your task is to implement an evaluation function you think may provide 
+        a good assessment of how well the game is going for the cat at a 
+        specific game state where the depth-limited search algorithm must stop.
+
+        Make sure to take care of the following considerations:
+        1) Remove the placeholder code immediately below these instructions.
+        2) Read through the skeleton code provided below.
+        3) Fill in the blanks following the instructions in the "TODO:" comments.
+        4) If you're stuck, you may ask in the course's Q&A or consult the
+           solution in the next folder to unblock yourself without spoiling too
+           much of the fun.
         """
-        # Move Score
-        move_score = self.score_moves(cat_turn) / 6.0  # Normalize for max 6 moves
+        # TODO: Remove the following line to enable your evaluation function.
+        return 2 if cat_turn else 1
 
-        # Proximity Score
-        proximity_score = self.score_proximity(cat_turn) / self.size # Normalize
+        # Skeleton Code - Custom Evaluation Function
+        # HINT: Below is a guide to help you implement your own evaluation
+        # logic. You can use or modify this as you see fit.
+        # Be creative. These are only suggestions.
 
-        # Calculate Penalty
-        center_row, center_col = self.size // 2, self.size // 2
-        distance = ((self.cat_row - center_row)**2 + (self.cat_col - center_col)**2)**0.5
+        # Initialize a score variable
+        score = 0
 
-        max_penalty = (self.size * 0.75)
-        penalty = max_penalty - distance
-        penalty = penalty / max_penalty # Normalize
-        if not cat_turn:
-            penalty += 0.2 
+        # TODO: Count the number of valid moves for the cat.
+        # HINT: Use `self.get_valid_moves()` to get the list of moves.
+        move_score = 0  # Replace 0 with the number of valid moves.
 
-        # Combine Scores
-        score = proximity_score + move_score - penalty * 0.5
+        # TODO: Evaluate the proximity of the cat to the board's edge.
+        # HINT: Use the `self.cat_row` and `self.cat_col` to calculate the distance.
+        proximity_score = 0  # Replace 0 with your calculation logic.
+
+        # TODO: Incorporate penalties or rewards for specific conditions.
+        # Example: Penalize if the cat is not making progress or if it's
+        #          not the cat's turn.
+        penalty = 0  # Add logic for penalties.
+
+        # TODO: Combine all the metrics into the final score.
+        # Example: score = move_score + proximity_score - penalty
+        # Modify this as you prefer.
+        score = proximity_score + move_score - penalty
 
         return score
 
@@ -498,67 +516,9 @@ class CatTrapGame:
     def iterative_deepening(self, use_alpha_beta):
         """
         Perform iterative deepening search with an option to use Alpha-Beta pruning.
-
-        04_03 - Challenge: An iteratively deepening cat 
-
-        Your task is to implement the iterative deepening algorithm for the
-        intelligent cat.
-        Iterative deepening incrementally explores deeper levels of the game tree, to provide the best move possible in the allotted time.
-
-        Make sure to take care of the following considerations:
-        1) Remove the placeholder code immediately below these instructions.
-        2) Read through the skeleton code provided below.
-        3) Fill in the blanks following the instructions in the "TODO:" comments.
-        4) If you're stuck, you may ask in the course's Q&A or consult the 
-           solution in the next folder to unblock yourself without spoiling too
-           much of the fun.
         """
-        # TODO: Remove the following 2 lines to enable your iterative deepening implementation.
         self.placeholder_warning()
         return self.random_cat_move(), 0
-
-        # Skeleton Code - Iterative Deepening
-        best_depth = 0
-        output_move, utility = [self.cat_row, self.cat_col], 0
-
-        for depth in range(1, self.size**2):  # Maximum depth to explore
-            self.reached_max_depth = False
-            
-            # TODO: Use the chosen algorithm (Alpha-Beta or Minimax) to compute the best move
-            #       with a limited depth.
-            # HINT: If `use_alpha_beta` is True, call `self.alpha_beta()`. Otherwise, call `self.minimax()`.
-            # Replace the placeholder values below:
-            best_move, utility = None, None  # TODO: Replace with the correct function call.
-
-            # Stop exploring deeper levels if the search is terminated (timeout).
-            if self.terminated:
-                break
-            else:
-                # Great job! You're almost there. 
-                # Just tie it all together by updating `output_move` and `best_depth`.
-
-                # TODO: Update `output_move` and `best_depth` based on the result of the current depth.
-                # HINT: Ensure `output_move` stores the best move found so far.
-                # HINT: Update `best_depth` to track the deepest level explored successfully.
-                pass  # TODO: Replace this with code to update `output_move` and `best_depth`.
-
-                elapsed_time = (time.time() - self.start_time) * 1000
-                if VERBOSE:
-                    # TODO: Print diagnostic information about the current depth and elapsed time.
-                    # HINT: Use the `depth` and `elapsed_time` variables.
-                    pass  # TODO: Replace this with a print statement to show progress.
-
-                # Stop exploring deeper levels if the maximum depth was never reached.
-                # Near the end, trees will be shallower than depth.
-                # Thus, a shallow tree that finishes yields the best move.
-                if not self.reached_max_depth:
-                    break
-
-        if VERBOSE:
-            # TODO: Print the final depth reached.
-            pass  # TODO: Replace this with a print statement for `best_depth`.
-
-        return output_move, utility
 
     def placeholder_warning(self):
         signs = '⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️'
