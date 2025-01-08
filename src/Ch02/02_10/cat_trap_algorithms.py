@@ -35,9 +35,8 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
-        self.reached_max_depth = False 
-        self.max_depth = float('inf')
-
+        self.reached_max_depth = False
+        
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
         num_blocks = random.randint(round(0.067 * (self.size**2)), round(0.13 * (self.size**2)))
@@ -227,7 +226,6 @@ class CatTrapGame:
         self.start_time = time.time()
         self.deadline = self.start_time + allotted_time 
         self.terminated = False
-        self.max_depth = float('inf') 
 
         if VERBOSE:
             print('\n======= NEW MOVE =======')
@@ -239,8 +237,8 @@ class CatTrapGame:
             move, _ = self.alpha_beta() if alpha_beta else self.minimax()   
         elif depth_limited:
             # Select a move using Depth-Limited Search with optional Alpha-Beta pruning.
-            self.max_depth = max_depth
-            move, _ = self.alpha_beta() if alpha_beta else self.minimax()
+            self.placeholder_warning()
+            return self.random_cat_move(), 0
         elif iterative_deepening:
             # Select a move using the Iterative Deepening algorithm.
             move, _ = self.iterative_deepening(use_alpha_beta = alpha_beta)

@@ -1,7 +1,7 @@
 """
 02_09 - Challenge: A pruning cat  
 
-        Go to line 343 for the challenge!
+        Go to line 341 for the challenge!
 
 Cat Trap Algorithms
 
@@ -39,8 +39,7 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
-        self.reached_max_depth = False 
-        self.max_depth = float('inf')
+        self.reached_max_depth = False
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
@@ -231,7 +230,6 @@ class CatTrapGame:
         self.start_time = time.time()
         self.deadline = self.start_time + allotted_time 
         self.terminated = False
-        self.max_depth = float('inf') 
 
         if VERBOSE:
             print('\n======= NEW MOVE =======')
@@ -243,8 +241,8 @@ class CatTrapGame:
             move, _ = self.alpha_beta() if alpha_beta else self.minimax()   
         elif depth_limited:
             # Select a move using Depth-Limited Search with optional Alpha-Beta pruning.
-            self.max_depth = max_depth
-            move, _ = self.alpha_beta() if alpha_beta else self.minimax()
+            self.placeholder_warning()
+            return self.random_cat_move(), 0
         elif iterative_deepening:
             # Select a move using the Iterative Deepening algorithm.
             move, _ = self.iterative_deepening(use_alpha_beta = alpha_beta)
@@ -348,7 +346,7 @@ class CatTrapGame:
 
         Your task is to implement the alpha-beta pruning algorithm.
         You will do this by adding code to alpha_beta_max_value() and
-        alpha_beta_min_value() which are currently exact copies of 
+        alpha_beta_min_value(), which are currently exact copies of 
         max_value() and min_value() respectively (except for the alpha 
         and beta parameters).
 
@@ -365,7 +363,7 @@ class CatTrapGame:
         return self.random_cat_move(), 0
 
         # Skeleton Code - Alpha-Beta Pruning
-        # HINT: There are only 2 "TODO: " comments below.
+        # HINT: There are only 2 "TODO:" comments below.
 
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True

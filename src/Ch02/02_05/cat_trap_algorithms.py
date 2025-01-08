@@ -1,7 +1,7 @@
 """
 02_05 - Challenge: Challenge: A perfect cat in a small world  
 
-        Go to line 343 for the challenge!
+        Go to line 271 for the challenge!
 
 Cat Trap Algorithms
 
@@ -39,8 +39,7 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
-        self.reached_max_depth = False 
-        self.max_depth = float('inf')
+        self.reached_max_depth = False
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
@@ -231,7 +230,6 @@ class CatTrapGame:
         self.start_time = time.time()
         self.deadline = self.start_time + allotted_time 
         self.terminated = False
-        self.max_depth = float('inf') 
 
         if VERBOSE:
             print('\n======= NEW MOVE =======')
@@ -243,8 +241,8 @@ class CatTrapGame:
             move, _ = self.alpha_beta() if alpha_beta else self.minimax()   
         elif depth_limited:
             # Select a move using Depth-Limited Search with optional Alpha-Beta pruning.
-            self.max_depth = max_depth
-            move, _ = self.alpha_beta() if alpha_beta else self.minimax()
+            self.placeholder_warning()
+            return self.random_cat_move(), 0
         elif iterative_deepening:
             # Select a move using the Iterative Deepening algorithm.
             move, _ = self.iterative_deepening(use_alpha_beta = alpha_beta)
@@ -273,14 +271,38 @@ class CatTrapGame:
     def max_value(self, game, depth):
         """
         Calculate the maximum value for the current game state in the minimax algorithm.
+
+        02_05 - Challenge: Challenge: A perfect cat in a small world
+
+        Your task is to implement the minimax algorithm.
+        You will do this by adding code to max_value() and min_value().
+
+        Make sure to take care of the following considerations:
+        1) Remove the placeholder code immediately below these instructions.
+        2) Read through the skeleton code provided below for both functions.
+        3) Fill in the blanks following the instructions in the "TODO:" comments.
+        4) If you're stuck, you may ask in the course's Q&A or consult the
+           solution in the next folder to unblock yourself without spoiling too
+           much of the fun.
         """
+        # TODO: Remove the following 2 lines to enable your alpha-beta implementation.
+        self.placeholder_warning()
+        return self.random_cat_move(), 0
+    
+        # Skeleton Code - Minimax
+        # HINT: Look for the "TODO:" comments below and fill in the blanks.
+
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
             return [-1, -1], 0
         
+        # Get a list of possible moves for the cat.
         legal_moves = game.get_valid_moves()  # Available directions: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
         
-        if not legal_moves:
+        # TODO: Write the code for the first step of the algorithm:
+        #       if Teminal(state) then return Utility(state)
+        # HINT: To determine if this is a terminal state, look at legal_moves.
+        if True: # Replace with the condition for a terminal state.
             return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
         
         best_value = float('-inf')
