@@ -1,7 +1,7 @@
 """
 03_04 - Challenge: A depth-limited cat
         
-        Go to line 295 for the challenge!
+        Go to line 308 for the challenge!
 
 Cat Trap Algorithms
 
@@ -362,8 +362,7 @@ class CatTrapGame:
         Calculate the minimum value for the current game state in the minimax algorithm.
 
         Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board. This simplifies implementation
-        for moves like blocking hexgrid, where legal positions are any unoccupied hexgrid, not directional.
+        Instead, it examines every possible free tile on the board.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
@@ -452,8 +451,7 @@ class CatTrapGame:
         Calculate the minimum value for the current game state using Alpha-Beta pruning.
 
         Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board. This simplifies implementation
-        for moves like blocking hexgrid, where legal positions are any unoccupied hexgrid, not directional.
+        Instead, it examines every possible free tile on the board.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True

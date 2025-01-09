@@ -1,7 +1,7 @@
 """
 04_03 - Challenge: An iteratively deepening cat 
         
-        Go to line 479 for the challenge!
+        Go to line 484 for the challenge!
 
 Cat Trap Algorithms
 
@@ -361,8 +361,7 @@ class CatTrapGame:
         Calculate the minimum value for the current game state in the minimax algorithm.
 
         Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board. This simplifies implementation
-        for moves like blocking hexgrid, where legal positions are any unoccupied hexgrid, not directional.
+        Instead, it examines every possible free tile on the board.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
@@ -440,8 +439,7 @@ class CatTrapGame:
         Calculate the minimum value for the current game state using Alpha-Beta pruning.
 
         Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board. This simplifies implementation
-        for moves like blocking hexgrid, where legal positions are any unoccupied hexgrid, not directional.
+        Instead, it examines every possible free tile on the board.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
@@ -541,9 +539,9 @@ class CatTrapGame:
 
                 # Stop exploring deeper levels if the maximum depth was never reached.
                 # As the hexgrid gets more and more blocked tiles, there will be less
-                # and less turs, so trees will be shallower than the limiting depth.
-                # Thus, a shallow tree that actually finishes yields the best move
-                # and there's no need to wait for a better move.
+                # and less turns left, so trees will be shallower than the limiting 
+                # depth. Thus, a shallow tree that actually finishes yields the best 
+                # move, so there's no need to wait for a better move.
                 if not self.reached_max_depth:
                     break
 

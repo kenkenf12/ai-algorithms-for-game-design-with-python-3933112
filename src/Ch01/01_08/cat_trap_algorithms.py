@@ -1,4 +1,8 @@
 """
+01_08 - Code Example: A random cat
+
+        Go to line 234 for the code!
+
 Cat Trap Algorithms
 
 This is the relevant code for the LinkedIn Learning Course 
@@ -35,7 +39,6 @@ class CatTrapGame:
         self.terminated = False
         self.start_time = time.time()
         self.reached_max_depth = False
-        self.max_depth = float('inf')
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
@@ -176,93 +179,7 @@ class CatTrapGame:
         if num_moves == 0: 
             return float(-100)
 
-        # Use the evaluation function
-        # Evaluation function options: 'moves', 'straight_exit', 'custom'
-        evaluation_function = 'straight_exit'
-
-        if evaluation_function == 'moves':
-            return self.score_moves(cat_turn)
-        elif evaluation_function == 'straight_exit':
-            return self.score_straight_exit(cat_turn)
-        elif evaluation_function == 'custom':
-            return self.score_custom(cat_turn)
         return 0
-
-    def score_moves(self, cat_turn):
-        """
-        Evaluate based on the number of valid moves available for the cat.
-        """
-        cat_moves = self.get_cat_moves()
-        return len(cat_moves) if cat_turn else len(cat_moves) - 1
-
-    def get_target_position(self, scout, direction):
-        """
-        Get the target position based on the specified direction.
-        """
-        r, c = scout
-        col_offset = r % 2  # Offset for columns based on row parity
-        
-        if direction == 'E':
-            return [r, c + 1]
-        elif direction == 'W':
-            return [r, c - 1]
-        elif direction == 'NE':
-            return [r - 1, c + col_offset]
-        elif direction == 'NW':
-            return [r - 1, c - 1 + col_offset]
-        elif direction == 'SE':
-            return [r + 1, c + col_offset]
-        elif direction == 'SW':
-            return [r + 1, c - 1 + col_offset]
-        return [r, c]
-
-    def score_straight_exit(self, cat_turn):
-        """
-        Evaluate the cat's access to the nearest board edge along straight paths.
-        """
-        distances = []
-        directions =  ['E', 'W', 'NE', 'NW', 'SE', 'SW']
-        n = self.size
-        for dir in directions:
-            distance = 0
-            r, c = self.cat
-            while not (r < 0 or r >= n or c < 0 or c >= n):
-                if self.hexgrid[r, c] == BLOCKED_TILE:
-                    distance += n # Increase cost for blocked paths
-                    break
-                distance += 1
-                r, c = self.get_target_position([r, c], dir)
-            distances.append(distance)
-
-        distances.sort()
-        return self.size - (distances[0] if cat_turn else distances[1])
-
-    def score_custom(self, cat_turn):
-        """
-        Custom evaluation function combining moves, proximity, and progress penalties.
-        """
-        n = self.size
-        # Move Score
-        move_score = self.score_moves(cat_turn) / 6.0  # Normalize for max 6 moves
-
-        # Proximity Score
-        proximity_score = self.score_straight_exit(cat_turn) / n # Normalize
-
-        # Calculate Penalty
-        center_row, center_col = n // 2, n // 2
-        cat_row, cat_col = self.cat
-        distance = ((cat_row - center_row)**2 + (cat_col - center_col)**2)**0.5
-
-        max_penalty = n * 0.75
-        penalty = max_penalty - distance
-        penalty = penalty / max_penalty # Normalize
-        if not cat_turn:
-            penalty += 0.2 
-
-        # Combine Scores
-        score = proximity_score + move_score - penalty * 0.5
-
-        return score
 
     # ===================== Intelligent Agents =====================
     """
@@ -285,7 +202,6 @@ class CatTrapGame:
         self.start_time = time.time()
         self.deadline = self.start_time + allotted_time 
         self.terminated = False
-        self.max_depth = float('inf') 
 
         if VERBOSE:
             print('\n======= NEW MOVE =======')
@@ -297,8 +213,8 @@ class CatTrapGame:
             move, _ = self.alpha_beta() if alpha_beta else self.minimax()   
         elif depth_limited:
             # Select a move using Depth-Limited Search with optional Alpha-Beta pruning.
-            self.max_depth = max_depth
-            move, _ = self.alpha_beta() if alpha_beta else self.minimax()
+            self.placeholder_warning()
+            return self.random_cat_move(), 0
         elif iterative_deepening:
             # Select a move using the Iterative Deepening algorithm.
             move, _ = self.iterative_deepening(use_alpha_beta = alpha_beta)
@@ -325,27 +241,57 @@ class CatTrapGame:
     def max_value(self, game, depth):
         """
         Calculate the maximum value for the current game state in the minimax algorithm.
+
+        02_05 - Challenge: Challenge: A perfect cat in a small world
+
+        Your task is to implement the minimax algorithm.
+        You will do this by adding code to max_value() and min_value().
+
+        Make sure to take care of the following considerations:
+        1) Remove the placeholder code immediately below these instructions.
+        2) Read through the skeleton code provided below for both functions.
+        3) Fill in the blanks following the instructions in the "TODO:" comments.
+        4) If you're stuck, you may ask in the course's Q&A or consult the
+           solution in the next folder to unblock yourself without spoiling too
+           much of the fun.
         """
+        # TODO: Remove the following 2 lines to enable your minimax implementation.
+        self.placeholder_warning()
+        return self.random_cat_move(), 0
+    
+        # Skeleton Code - Minimax
+        # HINT: There are 6 "TODO:" comments below.
+
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
             return [-1, -1], 0
         
         legal_moves = game.get_cat_moves()  # Available directions: E, W, NE, NW, SE, SW
-        if not legal_moves or depth == self.max_depth:
-            if depth == self.max_depth:
-                self.reached_max_depth = True  
+        
+        # TODO: Complete the code for the first step of the algorithm:
+        #       if Terminal(state) then return Utility(state)
+        # HINT: To determine if this is a terminal state, look at legal_moves.
+        if True: # Replace with the condition for a terminal state.
             return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
         
         best_value = float('-inf')
         best_move = legal_moves[0]
         for move in legal_moves:
             next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = True)
-            value = self.min_value(next_game, depth + 1)
+            # TODO: Apply the current move to next_game.
+            # HINT: Remember this is a max-node, so it's the cat's turn.
+            pass # Replace with a call to apply_move()
+
+            # TODO: Calculate the min-node value for this move.
+            # HINT: Call self.min_value(), not next_game.min_value().
+            #       This is to allow the timeout termination mechanism
+            #       to operate consistently.
+            value = 0 # Replace with a call to min_value()
 
             if self.terminated:
                 return [-1, -1], 0
             
+            # Updating the best move and value to return
             if value > best_value:
                 best_value = value
                 best_move = move
@@ -363,16 +309,13 @@ class CatTrapGame:
             self.terminated = True
             return 0
 
-        # Check if terminal state or depth limit is reached
+        # TODO: Complete the code for the first step of the algorithm:
+        #       if Terminal(state) then return Utility(state)
+        # HINT: To determine if this is a terminal state, check if the cat
+        #       is at an edge tile.
         r, c = game.cat
         n = game.size
-        if depth == self.max_depth or (
-            r == 0 or r == n - 1 or 
-            c == 0 or c == n - 1
-        ):
-            if depth == self.max_depth:
-                self.reached_max_depth = True
-            
+        if False: # Replace with the condition for a terminal state.
             return (n**2 - depth) * game.utility(1, cat_turn = False)
         
         best_value = float('inf')
@@ -381,8 +324,17 @@ class CatTrapGame:
         legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
         for move in legal_moves:
             next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = False)
-            _, value = self.max_value(next_game, depth + 1)
+            # TODO: Apply the current move to next_game.
+            # HINT: Remember this is a min-node, so it's the human player's turn.
+            pass # Replace with a call to apply_move()
+
+            # TODO: Calculate the max-node value for this move.
+            # HINT: Call self.max_value(), not next_game.max_value().
+            #       This is to allow the timeout termination mechanism
+            #       to operate consistently.
+            _, value = [0,0], 0 # Replace with a call to max_value()
+
+            # Updating the best value to return
             best_value = min(best_value, value)
 
             if self.terminated:
@@ -400,76 +352,8 @@ class CatTrapGame:
         """
         Calculate the maximum value for the current game state using Alpha-Beta pruning.
         """
-        if self.time_left() < LAST_CALL_MS:
-            self.terminated = True
-            return [-1, -1], 0
-        
-        legal_moves = game.get_cat_moves()  # Available directions: E, W, NE, NW, SE, SW
-        if not legal_moves or depth == self.max_depth:
-            if depth == self.max_depth:
-                self.reached_max_depth = True
-            return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
-        
-        best_value = float('-inf')
-        best_move = legal_moves[0]
-        for move in legal_moves:
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = True)
-            value = self.alpha_beta_min_value(next_game, alpha, beta, depth + 1)
-
-            if self.terminated:
-                return [-1, -1], 0
-            
-            if value > best_value:
-                best_value = value
-                best_move = move
-
-            if best_value >= beta: # Pruning
-                return best_move, best_value
-            alpha = max(alpha, best_value)
-
-        return best_move, best_value
-
-    def alpha_beta_min_value(self, game, alpha, beta, depth):
-        """
-        Calculate the minimum value for the current game state using Alpha-Beta pruning.
-
-        Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board.
-        """
-        if self.time_left() < LAST_CALL_MS:
-            self.terminated = True
-            return 0
-
-        # Check if terminal state or depth limit is reached
-        r, c = game.cat
-        n = game.size
-        if depth == self.max_depth or (
-            r == 0 or r == n - 1 or 
-            c == 0 or c == n - 1
-        ):
-            if depth == self.max_depth:
-                self.reached_max_depth = True
-            return (n**2 - depth) * game.utility(1, cat_turn = False)
-        
-        best_value = float('inf')
-
-        # Iterate through all legal moves for the player (empty tiles)
-        legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
-        for move in legal_moves:
-            next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = False)
-            _, value = self.alpha_beta_max_value(next_game, alpha, beta, depth + 1)
-            best_value = min(best_value, value)
-
-            if self.terminated:
-                return 0
-            
-            if best_value <= alpha: # Pruning
-                return best_value
-            beta = min(beta, best_value)
-
-        return best_value
+        self.placeholder_warning()
+        return self.random_cat_move(), 0
 
     def alpha_beta(self, alpha = float('-inf'), beta = float('inf')):
         """

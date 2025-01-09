@@ -1,7 +1,7 @@
 """
-02_05 - Challenge: Challenge: A perfect cat in a small world  
+02_05 - Challenge: A perfect cat in a small world  
 
-        Go to line 248 for the challenge!
+        Go to line 241 for the challenge!
 
 Cat Trap Algorithms
 
@@ -242,7 +242,7 @@ class CatTrapGame:
         """
         Calculate the maximum value for the current game state in the minimax algorithm.
 
-        02_05 - Challenge: Challenge: A perfect cat in a small world
+        02_05 - Challenge: A perfect cat in a small world
 
         Your task is to implement the minimax algorithm.
         You will do this by adding code to max_value() and min_value().
@@ -255,12 +255,12 @@ class CatTrapGame:
            solution in the next folder to unblock yourself without spoiling too
            much of the fun.
         """
-        # TODO: Remove the following 2 lines to enable your alpha-beta implementation.
+        # TODO: Remove the following 2 lines to enable your minimax implementation.
         self.placeholder_warning()
         return self.random_cat_move(), 0
     
         # Skeleton Code - Minimax
-        # HINT: Look for the "TODO:" comments below and fill in the blanks.
+        # HINT: There are 6 "TODO:" comments below.
 
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
@@ -268,8 +268,8 @@ class CatTrapGame:
         
         legal_moves = game.get_cat_moves()  # Available directions: E, W, NE, NW, SE, SW
         
-        # TODO: Write the code for the first step of the algorithm:
-        #       if Teminal(state) then return Utility(state)
+        # TODO: Complete the code for the first step of the algorithm:
+        #       if Terminal(state) then return Utility(state)
         # HINT: To determine if this is a terminal state, look at legal_moves.
         if True: # Replace with the condition for a terminal state.
             return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
@@ -278,12 +278,20 @@ class CatTrapGame:
         best_move = legal_moves[0]
         for move in legal_moves:
             next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = True)
-            value = self.min_value(next_game, depth + 1)
+            # TODO: Apply the current move to next_game.
+            # HINT: Remember this is a max-node, so it's the cat's turn.
+            pass # Replace with a call to apply_move()
+
+            # TODO: Calculate the min-node value for this move.
+            # HINT: Call self.min_value(), not next_game.min_value().
+            #       This is to allow the timeout termination mechanism
+            #       to operate consistently.
+            value = 0 # Replace with a call to min_value()
 
             if self.terminated:
                 return [-1, -1], 0
             
+            # Updating the best move and value to return
             if value > best_value:
                 best_value = value
                 best_move = move
@@ -295,17 +303,19 @@ class CatTrapGame:
         Calculate the minimum value for the current game state in the minimax algorithm.
 
         Unlike max_value, min_value does not iterate over specific directions ('E', 'W', etc.).
-        Instead, it examines every possible free tile on the board. This simplifies implementation
-        for moves like blocking hexgrid, where legal positions are any unoccupied hexgrid, not directional.
+        Instead, it examines every possible free tile on the board.
         """
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
             return 0
 
-        # Check if terminal state
+        # TODO: Complete the code for the first step of the algorithm:
+        #       if Terminal(state) then return Utility(state)
+        # HINT: To determine if this is a terminal state, check if the cat
+        #       is at an edge tile.
         r, c = game.cat
         n = game.size
-        if r == 0 or r == n - 1 or c == 0 or c == n - 1:
+        if False: # Replace with the condition for a terminal state.
             return (n**2 - depth) * game.utility(1, cat_turn = False)
         
         best_value = float('inf')
@@ -314,8 +324,17 @@ class CatTrapGame:
         legal_moves = [list(coord) for coord in np.argwhere(game.hexgrid == EMPTY_TILE)]
         for move in legal_moves:
             next_game = copy.deepcopy(game)
-            next_game.apply_move(move, cat_turn = False)
-            _, value = self.max_value(next_game, depth + 1)
+            # TODO: Apply the current move to next_game.
+            # HINT: Remember this is a min-node, so it's the human player's turn.
+            pass # Replace with a call to apply_move()
+
+            # TODO: Calculate the max-node value for this move.
+            # HINT: Call self.max_value(), not next_game.max_value().
+            #       This is to allow the timeout termination mechanism
+            #       to operate consistently.
+            _, value = [0,0], 0 # Replace with a call to max_value()
+
+            # Updating the best value to return
             best_value = min(best_value, value)
 
             if self.terminated:
