@@ -27,21 +27,20 @@ class CatTrapGame:
     """
 
     def __init__(self, size):
-        self.cat_row = size // 2
-        self.cat_col = size // 2
+        self.cat = [size // 2] * 2
         self.size = size
         self.hexgrid = np.full((size, size), EMPTY_TILE)
-        self.hexgrid[self.cat_row, self.cat_col] = CAT_TILE
+        self.hexgrid[tuple(self.cat)] = CAT_TILE
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
         self.reached_max_depth = False
-        
+
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
         num_blocks = random.randint(round(0.067 * (self.size**2)), round(0.13 * (self.size**2)))
         count = 0
-        self.hexgrid[self.cat_row, self.cat_col] = CAT_TILE
+        self.hexgrid[tuple(self.cat)] = CAT_TILE
 
         while count < num_blocks:
             r = random.randint(0, self.size - 1)
@@ -56,77 +55,51 @@ class CatTrapGame:
     def set_hexgrid(self, hexgrid):
         """Copy incoming hexgrid."""
         self.hexgrid = hexgrid
-        self.cat_row, self.cat_col = tuple(np.argwhere(self.hexgrid == CAT_TILE)[0])  # Find the cat position  
+        self.cat = list(np.argwhere(self.hexgrid == CAT_TILE)[0])  # Find the cat position  
         if VERBOSE:
             print('\n======= NEW GAME =======')
             self.pretty_print_hexgrid()
    
-    def block_tile(self, r, c):
-        self.hexgrid[r, c] = BLOCKED_TILE
+    def block_tile(self, coord):
+        self.hexgrid[tuple(coord)] = BLOCKED_TILE
 
-    def unblock_tile(self, r, c):
-        self.hexgrid[r, c] = EMPTY_TILE
+    def unblock_tile(self, coord):
+        self.hexgrid[tuple(coord)] = EMPTY_TILE
 
-    def place_cat(self, r, c):
-        self.hexgrid[r, c] = CAT_TILE
-        self.cat_row = r
-        self.cat_col = c
+    def place_cat(self, coord):
+        self.hexgrid[tuple(coord)] = CAT_TILE
+        self.cat = coord
 
-    def move_cat(self, r, c):
-        self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Clear previous cat position
-        self.place_cat(r, c)
+    def move_cat(self, coord):
+        self.hexgrid[tuple(self.cat)] = EMPTY_TILE  # Clear previous cat position
+        self.place_cat(coord)
     
-    def get_valid_moves(self):
+    def get_cat_moves(self):
         """
         Get a list of valid moves for the cat.
         """
-        hexgrid, r, c = self.hexgrid, self.cat_row, self.cat_col
-        size = self.size
+        hexgrid = self.hexgrid
+        r, c = self.cat
+        n = self.size
+        col_offset = r % 2  # Offset for columns based on row parity
         moves = []
-        # Check possible directions for the next move: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
-        if c < size - 1 and hexgrid[r][c + 1] == EMPTY_TILE:
-            moves.append('E')
-        if c > 0 and hexgrid[r][c - 1] == EMPTY_TILE:
-            moves.append('W')
 
-        if r % 2 == 0:
-            if r > 0 and c < size and hexgrid[r - 1][c] == EMPTY_TILE:
-                moves.append('NE')
-            if r > 0 and c > 0 and hexgrid[r - 1][c - 1] == EMPTY_TILE:
-                moves.append('NW')
-            if r < size - 1 and c < size and hexgrid[r + 1][c] == EMPTY_TILE:
-                moves.append('SE')
-            if r < size - 1 and c > 0 and hexgrid[r + 1][c - 1] == EMPTY_TILE:
-                moves.append('SW')
-        else:
-            if r > 0 and c < size - 1 and hexgrid[r - 1][c + 1] == EMPTY_TILE:
-                moves.append('NE')
-            if r > 0 and c >= 0 and hexgrid[r - 1][c] == EMPTY_TILE:
-                moves.append('NW')
-            if r < size - 1 and c < size - 1 and hexgrid[r + 1][c + 1] == EMPTY_TILE:
-                moves.append('SE')
-            if r < size - 1 and c > 0 and hexgrid[r + 1][c] == EMPTY_TILE:
-                moves.append('SW')
+        # Directions with column adjustments
+        directions = {
+            'E': (0, 1),
+            'W': (0, -1),
+            'NE': (-1, col_offset),
+            'NW': (-1, -1 + col_offset),
+            'SE': (1, col_offset),
+            'SW': (1, -1 + col_offset),
+        }
+
+        for dr, dc in directions.values():
+            tr, tc = r + dr, c + dc  # Calculate target row and column
+            if 0 <= tr < n and 0 <= tc < n and hexgrid[tr, tc] == EMPTY_TILE:
+                moves.append([tr, tc])
+
         return moves
-
-    def get_target_position(self, r, c, direction):
-        """
-        Get the target position based on the current position and direction.
-        """
-        target = [r, c]
-        if direction == 'E':
-            target = [r, c + 1]
-        elif direction == 'W':
-            target = [r, c - 1]
-        elif direction == 'NE':
-            target = [r - 1, c] if r % 2 == 0 else [r - 1, c + 1]
-        elif direction == 'NW':
-            target = [r - 1, c - 1] if r % 2 == 0 else [r - 1, c]
-        elif direction == 'SE':
-            target = [r + 1, c] if r % 2 == 0 else [r + 1, c + 1]
-        elif direction == 'SW':
-            target = [r + 1, c - 1] if r % 2 == 0 else [r + 1, c]
-        return target
 
     def apply_move(self, move, cat_turn):
         """
@@ -142,8 +115,8 @@ class CatTrapGame:
 
         if cat_turn:
             self.hexgrid[move[0], move[1]] = CAT_TILE  # Place the cat
-            self.hexgrid[self.cat_row, self.cat_col] = EMPTY_TILE  # Remove the old cat
-            self.cat_row, self.cat_col = move
+            self.hexgrid[tuple(self.cat)] = EMPTY_TILE  # Remove the old cat
+            self.cat = move
         else:
             self.hexgrid[move[0], move[1]] = BLOCKED_TILE
 
@@ -193,10 +166,9 @@ class CatTrapGame:
         Calculate the utility of the current game state.
         """
         # Terminal cases
-        if (
-            self.cat_row == 0 or self.cat_row == self.size - 1 or
-            self.cat_col == 0 or self.cat_col == self.size - 1
-        ):
+        r, c = self.cat
+        n = self.size
+        if r == 0 or r == n - 1 or c == 0 or c == n - 1:
             return float(100)
         
         # Only the cat can run out of moves
@@ -250,19 +222,17 @@ class CatTrapGame:
             print(f'Elapsed time: {elapsed_time:.3f}ms ')
             print(f'New cat coordinates: {move}')
             temp = copy.deepcopy(self)
-            temp.move_cat(move[0], move[1])
+            if move != [-1, -1]:
+                temp.move_cat(move)
             temp.pretty_print_hexgrid()
         return move
 
     def random_cat_move(self):
         """Randomly select a move for the cat."""
-        moves = self.get_valid_moves()
-        if VERBOSE:
-            print(f'Moves: {moves}')  # Available directions for the next move: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
+        moves = self.get_cat_moves()
         if moves:
-            direction = random.choice(moves)
-            return self.get_target_position(self.cat_row, self.cat_col, direction)
-        return [self.cat_row, self.cat_col]
+            return random.choice(moves)
+        return self.cat
 
     def max_value(self, game, depth):
         """
@@ -272,15 +242,14 @@ class CatTrapGame:
             self.terminated = True
             return [-1, -1], 0
         
-        legal_moves = game.get_valid_moves()  # Available directions: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
+        legal_moves = game.get_cat_moves()  # Available directions: E, W, NE, NW, SE, SW
         
         if not legal_moves:
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+            return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
         
         best_value = float('-inf')
-        best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
-        for direction in legal_moves:
-            move = game.get_target_position(game.cat_row, game.cat_col, direction)
+        best_move = legal_moves[0]
+        for move in legal_moves:
             next_game = copy.deepcopy(game)
             next_game.apply_move(move, cat_turn = True)
             value = self.min_value(next_game, depth + 1)
@@ -307,11 +276,10 @@ class CatTrapGame:
             return 0
 
         # Check if terminal state
-        if (
-            game.cat_row == 0 or game.cat_row == self.size - 1 or
-            game.cat_col == 0 or game.cat_col == self.size - 1
-        ):
-            return (game.size**2 - depth) * game.utility(1, cat_turn = False)
+        r, c = game.cat
+        n = game.size
+        if r == 0 or r == n - 1 or c == 0 or c == n - 1:
+            return (n**2 - depth) * game.utility(1, cat_turn = False)
         
         best_value = float('inf')
 
@@ -341,16 +309,15 @@ class CatTrapGame:
         if self.time_left() < LAST_CALL_MS:
             self.terminated = True
             return [-1, -1], 0
-
-        legal_moves = game.get_valid_moves()  # Available directions: 'E', 'W', 'SE', 'SW', 'NE', 'NW'
         
-        if not legal_moves: 
-            return [self.cat_row, self.cat_col], (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
-
+        legal_moves = game.get_cat_moves()  # Available directions: E, W, NE, NW, SE, SW
+        
+        if not legal_moves:
+            return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+        
         best_value = float('-inf')
-        best_move = game.get_target_position(game.cat_row, game.cat_col, legal_moves[0])
-        for direction in legal_moves:
-            move = game.get_target_position(game.cat_row, game.cat_col, direction)
+        best_move = legal_moves[0]
+        for move in legal_moves:
             next_game = copy.deepcopy(game)
             next_game.apply_move(move, cat_turn = True)
             value = self.alpha_beta_min_value(next_game, alpha, beta, depth + 1)
@@ -381,12 +348,11 @@ class CatTrapGame:
             return 0
 
         # Check if terminal state
-        if (
-            game.cat_row == 0 or game.cat_row == self.size - 1 or
-            game.cat_col == 0 or game.cat_col == self.size - 1
-        ): 
-            return (game.size**2 - depth) * game.utility(1, cat_turn = False)
-
+        r, c = game.cat
+        n = game.size
+        if r == 0 or r == n - 1 or c == 0 or c == n - 1:
+            return (n**2 - depth) * game.utility(1, cat_turn = False)
+        
         best_value = float('inf')
 
         # Iterate through all legal moves for the player (empty tiles)
