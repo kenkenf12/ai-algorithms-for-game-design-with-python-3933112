@@ -38,7 +38,6 @@ class CatTrapGame:
         self.deadline = 0
         self.terminated = False
         self.start_time = time.time()
-        self.reached_max_depth = False
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
@@ -198,7 +197,6 @@ class CatTrapGame:
 
     def select_cat_move(self, random_cat, alpha_beta, depth_limited, minimax, max_depth, iterative_deepening, allotted_time):
         """Select a move for the cat based on the chosen algorithm."""
-        self.reached_max_depth = False 
         self.start_time = time.time()
         self.deadline = self.start_time + allotted_time 
         self.terminated = False

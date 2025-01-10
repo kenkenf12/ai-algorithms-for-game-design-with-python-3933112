@@ -1,8 +1,8 @@
 """
 main.py: Entry Point for the Cat Trap Game Server
 
-This script initializes and runs the Cat Trap game server, handling client connections 
-and managing game state updates through WebSocket communication. 
+This script initializes and runs the Cat Trap game server, handling client
+connections and managing game state updates through WebSocket communication.
 The client is the Cat Trap GUI VSCode extension.
 
 Usage:
@@ -10,7 +10,7 @@ Usage:
     Start the Cat Trap GUI Extension: (Ctrl+Shift+P, then "Start Cat Trap Game")
 
 Dependencies:
-    - cat_trap_algorithms: Contains the game logic and algorithms for the Cat Trap game.
+    - cat_trap_algorithms: Contains the game logic and algorithms.
     - websockets: Used for WebSocket server communication.
     - asyncio: Enables asynchronous operations.
 """
@@ -54,20 +54,20 @@ async def handler(websocket, path):
                     game.set_hexgrid(np.array(data['grid'], dtype=int))
                 if game_status == GameStatus.GAME_ON:
                     game.block_tile(data['clicked_tile'])
-                    allotted_time = data['deadline']
                     strategy = data['strategy']
                     random_cat = (strategy == 'random')
-                    depth_limited = (strategy == 'limited')
                     minimax = (strategy == 'minimax')
+                    depth_limited = (strategy == 'limited')
                     iterative_deepening = (strategy == 'iterative')
                     max_depth = data['depth']
                     alpha_beta = data['alpha_beta_pruning']
+                    allotted_time = data['deadline']
                     r, c = game.cat
                     if r == 0 or r == game.size - 1 or c == 0 or c == game.size - 1:
                         game_status = GameStatus.CAT_WINS
                     else:
-                        new_cat = game.select_cat_move(random_cat, alpha_beta, depth_limited, minimax, max_depth, iterative_deepening, allotted_time)
-                        if new_cat == [-1, -1]:
+                        new_cat = game.select_cat_move(random_cat,minimax, alpha_beta, depth_limited, max_depth, iterative_deepening, allotted_time)
+                        if new_cat == TIMEOUT:
                             game_status = GameStatus.CAT_TIMEOUT
                         else: 
                             if new_cat == game.cat:
@@ -80,7 +80,7 @@ async def handler(websocket, path):
                     size = len(data['grid'])
                     game = CatTrapGame(size)
                     game.hexgrid = np.array(data['grid'], dtype=int)
-                    cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat position
+                    cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat
                     if cat.size > 0: # Cat may be absent in edit mode
                         game.cat = list(cat[0])
                 action = data['action']
@@ -98,7 +98,7 @@ async def handler(websocket, path):
                     size = len(data['grid'])
                     game = CatTrapGame(size)
                     game.hexgrid = np.array(data['grid'], dtype=int)
-                    cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat position
+                    cat = np.argwhere(game.hexgrid == CAT_TILE)  # Find the cat
                     if cat.size > 0: # Cat may be absent in edit mode
                         game.cat = list(cat[0])
                     game_status = GameStatus.GAME_ON
