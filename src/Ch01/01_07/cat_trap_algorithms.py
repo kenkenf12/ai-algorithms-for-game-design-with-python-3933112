@@ -236,8 +236,7 @@ class CatTrapGame:
 
     def max_value(self, game, depth):
         """
-        Calculate the maximum value for the current game state 
-        in the Minimax algorithm.
+        Calculate the maximum value for the current game state in the minimax algorithm.
         """
         self.placeholder_warning()
         return self.random_cat_move(), 0

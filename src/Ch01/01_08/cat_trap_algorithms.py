@@ -1,5 +1,7 @@
 """
- 01_07 - The Python setting for the cat trap
+ 01_08 - Code Example: A random cat
+
+        Go to line 232 for the code!
 
 Cat Trap Algorithms
 

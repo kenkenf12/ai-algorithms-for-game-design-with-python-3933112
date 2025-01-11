@@ -177,7 +177,7 @@ class CatTrapGame:
 
         # Use the evaluation function
         # Evaluation function options: 'moves', 'straight_exit', 'custom'
-        evaluation_function = 'straight_exit'
+        evaluation_function = 'custom'
 
         if evaluation_function == 'moves':
             return self.score_moves(cat_turn)
@@ -335,7 +335,7 @@ class CatTrapGame:
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True  
-            return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+            return self.cat, (2 * (game.size ** 2) - depth) * game.utility(len(legal_moves), cat_turn = True)
         
         best_value = float('-inf')
         best_move = legal_moves[0]
@@ -376,7 +376,7 @@ class CatTrapGame:
             if depth == self.max_depth:
                 self.reached_max_depth = True
             
-            return (n**2 - depth) * game.utility(1, cat_turn = False)
+            return (2 * (n ** 2) - depth) * game.utility(1, cat_turn = False)
         
         best_value = float('inf')
 
@@ -412,7 +412,7 @@ class CatTrapGame:
         if not legal_moves or depth == self.max_depth:
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return self.cat, (game.size**2 - depth) * game.utility(len(legal_moves), cat_turn = True)
+            return self.cat, (2 * (game.size ** 2) - depth) * game.utility(len(legal_moves), cat_turn = True)
         
         best_value = float('-inf')
         best_move = legal_moves[0]
@@ -456,7 +456,7 @@ class CatTrapGame:
         ):
             if depth == self.max_depth:
                 self.reached_max_depth = True
-            return (n**2 - depth) * game.utility(1, cat_turn = False)
+            return (2 * (n ** 2) - depth) * game.utility(1, cat_turn = False)
         
         best_value = float('inf')
 
@@ -489,7 +489,8 @@ class CatTrapGame:
         """
         best_depth = 0
         output_move = TIMEOUT, 0
-        for depth in range(1, self.size**2):
+        
+        for depth in range(1, 2 * (self.size ** 2)): # Maximum depth to explore
             self.reached_max_depth = False
             self.max_depth = depth
             if use_alpha_beta:
