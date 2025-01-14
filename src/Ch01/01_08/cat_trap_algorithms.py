@@ -1,7 +1,7 @@
 """
  01_08 - Code Example: A random cat
 
-        Go to line 205 for the code!
+        Go to line 203 for the code!
 
 Cat Trap Algorithms
 
@@ -32,8 +32,8 @@ class CatTrapGame:
     """
 
     size = 0
-    deadline = 0
     start_time = time.time()
+    deadline = time.time()
     terminated = False
     
     def __init__(self, size):
@@ -41,8 +41,6 @@ class CatTrapGame:
         self.hexgrid = np.full((size, size), EMPTY_TILE)
         self.hexgrid[tuple(self.cat)] = CAT_TILE
         CatTrapGame.size = size
-        CatTrapGame.deadline = 0
-        CatTrapGame.start_time = time.time()
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""

@@ -1,7 +1,7 @@
 """
 03_04 - Challenge: A depth-limited cat
         
-        Go to line 285 for the challenge!
+        Go to line 283 for the challenge!
 
 Cat Trap Algorithms
 
@@ -32,19 +32,17 @@ class CatTrapGame:
     """
 
     size = 0
-    deadline = 0
     start_time = time.time()
+    deadline = time.time()
     terminated = False
-    reached_max_depth = False
     max_depth = float('inf')
+    reached_max_depth = False
     
     def __init__(self, size):
         self.cat = [size // 2] * 2
         self.hexgrid = np.full((size, size), EMPTY_TILE)
         self.hexgrid[tuple(self.cat)] = CAT_TILE
         CatTrapGame.size = size
-        CatTrapGame.deadline = 0
-        CatTrapGame.start_time = time.time()
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""

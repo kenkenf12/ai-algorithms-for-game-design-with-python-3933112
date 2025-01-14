@@ -28,19 +28,17 @@ class CatTrapGame:
     """
 
     size = 0
-    deadline = 0
     start_time = time.time()
+    deadline = time.time()
     terminated = False
-    reached_max_depth = False
     max_depth = float('inf')
+    reached_max_depth = False
     
     def __init__(self, size):
         self.cat = [size // 2] * 2
         self.hexgrid = np.full((size, size), EMPTY_TILE)
         self.hexgrid[tuple(self.cat)] = CAT_TILE
         CatTrapGame.size = size
-        CatTrapGame.deadline = 0
-        CatTrapGame.start_time = time.time()
 
     def initialize_random_hexgrid(self):
         """Randomly initialize blocked hexgrid."""
@@ -240,8 +238,8 @@ class CatTrapGame:
         """Select a move for the cat based on the chosen algorithm."""
         CatTrapGame.start_time = time.time()
         CatTrapGame.deadline = CatTrapGame.start_time + allotted_time
-        CatTrapGame.max_depth = float('inf') 
         CatTrapGame.terminated = False
+        CatTrapGame.max_depth = float('inf') 
         CatTrapGame.reached_max_depth = False 
         move = self.cat
 
