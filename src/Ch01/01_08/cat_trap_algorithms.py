@@ -243,7 +243,7 @@ class CatTrapGame:
         Perform iterative deepening search with an option to use Alpha-Beta pruning.
         """
         self.placeholder_warning()
-        return self.random_cat_move(), 0
+        return self.random_cat_move()
 
     def placeholder_warning(self):
         signs = '⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️ ⚠️'

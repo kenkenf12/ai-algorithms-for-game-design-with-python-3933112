@@ -501,11 +501,11 @@ class CatTrapGame:
         # TODO: Remove the following 2 lines to enable your iterative deepening 
         #       implementation.
         self.placeholder_warning()
-        return self.random_cat_move(), 0
+        return self.random_cat_move()
 
         # Skeleton Code - Iterative Deepening
         best_depth = 0
-        output_move = TIMEOUT, 0
+        output_move = TIMEOUT
         
         max_turns = 2 * (CatTrapGame.size ** 2)
         for depth in range(1, max_turns):

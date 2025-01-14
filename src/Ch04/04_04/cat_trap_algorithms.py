@@ -480,7 +480,7 @@ class CatTrapGame:
         Perform iterative deepening search with an option to use Alpha-Beta pruning.
         """
         best_depth = 0
-        output_move = TIMEOUT, 0
+        output_move = TIMEOUT
         
         max_turns = 2 * (CatTrapGame.size ** 2)
         for depth in range(1, max_turns):
