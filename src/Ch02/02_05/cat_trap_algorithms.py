@@ -218,7 +218,7 @@ class CatTrapGame:
 
         Make sure to take care of the following considerations:
         1) Remove the placeholder code immediately below these instructions.
-        2) Read through the skeleton code provided below for both functions.
+        2) Read through the skeleton code provided below for both methods.
         3) Fill in the blanks following the instructions in the "TODO:" comments.
         4) If you're stuck, you may ask in the course's Q&A or consult the
            solution in the next folder to unblock yourself without spoiling too

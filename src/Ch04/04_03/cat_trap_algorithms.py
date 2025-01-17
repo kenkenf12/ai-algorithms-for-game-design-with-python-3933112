@@ -516,7 +516,7 @@ class CatTrapGame:
             # HINT: Don't forget to set the CatTrapGame.max_depth first!
             # HINT: If `alpha_beta` is True, call `self.alpha_beta()`. 
             #       Otherwise, call `self.minimax()`.
-            best_move = None  # Replace with the correct function call.
+            best_move = None  # Replace with the correct method call.
 
             # Stop exploring deeper levels if the search is terminated (timeout).
             if CatTrapGame.terminated:

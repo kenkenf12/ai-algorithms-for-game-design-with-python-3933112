@@ -286,7 +286,7 @@ class CatTrapGame:
 
         03_04 - Challenge: A depth-limited cat
 
-        Your task is to modify the following functions to upgrade the minimax 
+        Your task is to modify the following methods to upgrade the minimax 
         and alpha-beta pruning algorithms to support depth-limited search.
 
         Make sure to take care of the following considerations:
